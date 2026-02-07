@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GEO-MASTER | ULTIMATE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORE STYLES --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #050508;
+            color: white;
+            overflow: hidden;
+            touch-action: manipulation;
+            height: 100vh;
+            height: 100dvh;
+            width: 100vw;
+            position: fixed;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* --- UTILS --- */
+        .hidden { display: none !important; }
+        
+        /* Glassmorphism */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Cyberpunk Question Card Style */
+        .cyber-card {
+            background: rgba(10, 12, 20, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(6, 182, 212, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        /* Animated Borders for Question Card */
+        .cyber-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.8), transparent);
+            animation: scan-horizontal 4s ease-in-out infinite;
+        }
+        .cyber-card::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.8), transparent);
+            animation: scan-horizontal 4s ease-in-out infinite reverse;
+        }
+
+        /* Grid Background inside Question Card */
+        .cyber-grid-bg {
+            background-image: 
+                linear-gradient(rgba(6, 182, 212, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(6, 182, 212, 0.05) 1px, transparent 1px);
+            background-size: 20px 20px;
+            mask-image: radial-gradient(circle at center, black, transparent 80%);
+        }
+
+        /* Option Button Styles */
+        .option-btn {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.1s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* 反応速度向上 */
+        }
+        .option-btn:active { transform: scale(0.98); }
+        
+        /* Animations */
+        @keyframes scan-horizontal {
+            0%, 100% { opacity: 0.3; transform: translateX(-50%); }
+            50% { opacity: 1; transform: translateX(50%); }
+        }
+        
+        /* シンプルでクリーンなフェードイン（ガタつき防止） */
+        .animate-enter { 
+            animation: simpleFadeIn 0.4s ease-out forwards; 
+            opacity: 0; /* 初期状態を透明に */
+        }
+        @keyframes simpleFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(6,182,212,0.2); }
+            50% { box-shadow: 0 0 40px rgba(6,182,212,0.6); }
+        }
+        .pulse-glow { animation: pulse-glow 3s infinite; }
+
+        /* Swift Slide Transition (シュッと出てピタッと止まる) */
+        .slide-transition {
+            transition-property: transform, opacity;
+            transition-duration: 350ms;
+            /* Power4.out のような急減速カーブ */
+            transition-timing-function: cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        .custom-scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-[#050508]">
+
+    <!-- CANVAS BACKGROUND (Particles) -->
+    <canvas id="bg-canvas" class="fixed inset-0 z-0 pointer-events-none opacity-40"></canvas>
+    
+    <!-- MAIN WRAPPER -->
+    <div class="relative z-10 w-full h-full flex flex-col justify-between p-4 md:p-6 max-w-xl mx-auto">
+        
+        <!-- HEADER (Simple Exit Only) -->
+        <header id="app-header" class="flex items-center justify-between h-12 shrink-0 mb-2">
+            <button id="btn-home" onclick="goHome()" class="hidden group flex items-center gap-2 px-3 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all active:scale-95">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-white/60 group-hover:text-white"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                <span class="text-[10px] font-bold tracking-widest text-white/60 group-hover:text-white">EXIT</span>
+            </button>
+        </header>
+
+        <!-- SCREENS CONTAINER -->
+        <main class="flex-1 relative w-full h-full overflow-hidden flex flex-col">
+            
+            <!-- 1. START SCREEN -->
+            <div id="start-screen" class="absolute inset-0 flex flex-col justify-center animate-enter">
+                <div class="flex-1 flex flex-col justify-center items-center text-center pb-6">
+                    <div class="w-24 h-24 mb-4 rounded-full bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-[0_0_40px_rgba(6,182,212,0.6)] border border-white/20 pulse-glow">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    
+                    <h1 class="text-5xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-cyan-100 to-cyan-500 mb-2 drop-shadow-lg">
+                        GEO<br>MASTER
+                    </h1>
+                </div>
+
+                <div class="space-y-4 w-full shrink-0 pb-safe">
+                    <!-- All Button -->
+                    <button onclick="startGame('all')" class="w-full p-5 rounded-2xl border border-cyan-500/50 bg-gradient-to-r from-cyan-900/40 to-blue-900/40 text-left flex items-center justify-between active:scale-95 transition-all shadow-[0_0_20px_rgba(6,182,212,0.15)] group">
+                        <div>
+                            <h3 class="text-lg font-bold text-cyan-300 group-hover:text-cyan-200 transition-colors">全範囲スタート</h3>
+                            <p class="text-white/40 text-xs">ランダム出題</p>
+                        </div>
+                        <div class="p-2 bg-cyan-500/20 rounded-lg text-cyan-200">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 0 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+                        </div>
+                    </button>
+
+                    <!-- Category Buttons -->
+                    <button onclick="startGame('culture')" class="w-full p-5 rounded-2xl border border-white/10 bg-white/5 text-left flex items-center justify-between active:scale-95 transition-all hover:bg-white/10 group">
+                        <div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-purple-300 transition-colors">民族・言語</h3>
+                            <p class="text-white/40 text-xs">少数民族、公用語、文化</p>
+                        </div>
+                        <div class="p-2 bg-white/5 rounded-lg text-white/60 group-hover:text-purple-300 group-hover:bg-purple-500/20 transition-all">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        </div>
+                    </button>
+
+                    <button onclick="startGame('religion')" class="w-full p-5 rounded-2xl border border-white/10 bg-white/5 text-left flex items-center justify-between active:scale-95 transition-all hover:bg-white/10 group">
+                        <div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-yellow-300 transition-colors">世界の宗教</h3>
+                            <p class="text-white/40 text-xs">五大宗教、聖地、タブー</p>
+                        </div>
+                        <div class="p-2 bg-white/5 rounded-lg text-white/60 group-hover:text-yellow-300 group-hover:bg-yellow-500/20 transition-all">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                        </div>
+                    </button>
+
+                    <button onclick="startGame('china')" class="w-full p-5 rounded-2xl border border-white/10 bg-white/5 text-left flex items-center justify-between active:scale-95 transition-all hover:bg-white/10 group">
+                        <div>
+                            <h3 class="text-lg font-bold text-white group-hover:text-red-300 transition-colors">中国・東アジア</h3>
+                            <p class="text-white/40 text-xs">歴史、料理、経済成長</p>
+                        </div>
+                        <div class="p-2 bg-white/5 rounded-lg text-white/60 group-hover:text-red-300 group-hover:bg-red-500/20 transition-all">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. QUIZ SCREEN -->
+            <div id="quiz-screen" class="absolute inset-0 hidden flex flex-col">
+                
+                <!-- Question Card -->
+                <div id="question-container" class="shrink-0 mb-6 mt-2 opacity-0">
+                    <div class="cyber-card rounded-2xl p-8 min-h-[220px] flex flex-col items-center justify-center relative">
+                        <!-- Background Effects -->
+                        <div class="absolute inset-0 cyber-grid-bg opacity-30 pointer-events-none"></div>
+                        <div class="absolute top-0 right-0 w-40 h-40 bg-cyan-500/20 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                        <div class="absolute bottom-0 left-0 w-40 h-40 bg-purple-500/20 rounded-full blur-[60px] translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+                        
+                        <!-- Text -->
+                        <h2 id="q-text" class="text-xl md:text-2xl font-bold text-center leading-relaxed relative z-10 drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)] text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-300">
+                            <!-- Question Text Here -->
+                        </h2>
+                    </div>
+                </div>
+
+                <!-- Options Area -->
+                <div id="options-container" class="flex-1 flex flex-col gap-4 overflow-y-auto px-1 pb-4 custom-scroll opacity-0">
+                    <!-- Options will be injected here -->
+                </div>
+
+            </div>
+
+            <!-- 3. EXPLANATION OVERLAY (Modal style) -->
+            <!-- NOTE: backdrop-blur removed from expl-bg as requested to fix blurring issue -->
+            <div id="explanation-overlay" class="absolute inset-0 z-50 hidden flex flex-col justify-end">
+                <div class="absolute inset-0 bg-black/60 transition-opacity opacity-0" id="expl-bg"></div>
+                
+                <div class="relative w-full bg-[#0f111a] border-t border-white/10 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transform translate-y-full slide-transition flex flex-col max-h-[85vh]" id="expl-card">
+                    
+                    <!-- Result Status Header -->
+                    <div class="shrink-0 p-6 pb-2">
+                        <div id="expl-status-bar" class="flex items-center gap-3 mb-4 p-4 rounded-xl bg-white/5 border border-white/5">
+                            <div id="expl-icon" class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white font-bold">
+                                <!-- Icon -->
+                            </div>
+                            <div>
+                                <div class="text-[10px] uppercase tracking-wider opacity-60">Result</div>
+                                <div id="expl-correct-answer" class="text-lg font-bold text-white leading-tight">
+                                    <!-- Correct Answer -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Content -->
+                    <div class="overflow-y-auto px-6 pb-4 custom-scroll">
+                        <div class="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-2 flex items-center">
+                            <svg class="w-3 h-3 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            解説
+                        </div>
+                        <p id="expl-text" class="text-sm md:text-base text-gray-300 leading-7 font-medium">
+                            <!-- Explanation text -->
+                        </p>
+                    </div>
+
+                    <!-- Next Button Footer -->
+                    <div class="shrink-0 p-6 pt-2 pb-safe">
+                        <button onclick="nextQuestion()" class="w-full py-4 rounded-xl bg-white text-black font-bold text-lg hover:bg-gray-200 active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]">
+                            次へ
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. RESULT SCREEN -->
+            <div id="result-screen" class="absolute inset-0 hidden flex flex-col justify-center items-center text-center animate-enter">
+                <div class="relative mb-8">
+                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-purple-600 blur-[60px] opacity-30"></div>
+                    <div class="relative glass rounded-3xl p-10 border border-white/10 w-full max-w-xs mx-auto">
+                        <div class="text-xs font-mono text-white/40 mb-2 uppercase tracking-widest">Accuracy</div>
+                        <div class="text-7xl font-black text-white mb-2 tracking-tighter flex items-baseline justify-center">
+                            <span id="res-score">0</span><span class="text-2xl opacity-50 ml-1">%</span>
+                        </div>
+                        <div id="res-rank" class="inline-block px-4 py-1 rounded-full border border-white/10 bg-white/5 text-sm font-bold text-cyan-300 tracking-widest">
+                            RANK S
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 w-full max-w-sm">
+                    <button onclick="retry()" class="w-full py-4 rounded-xl bg-white/10 border border-white/10 font-bold hover:bg-white/20 active:scale-95 transition-all">
+                        もう一度
+                    </button>
+                    <button onclick="goHome()" class="w-full py-4 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 font-bold shadow-lg active:scale-95 transition-all">
+                        カテゴリ選択へ
+                    </button>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- SCRIPT -->
+    <script>
+        /* --- BACKGROUND PARTICLES --- */
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height, particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.size = Math.random() * 2;
+                this.alpha = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+            }
+            draw() {
+                ctx.fillStyle = `rgba(100, 200, 255, ${this.alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        for (let i = 0; i < 50; i++) particles.push(new Particle());
+
+        function animateBg() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateBg);
+        }
+        animateBg();
+
+
+        /* --- GAME DATA --- */
+        const RAW_DATA = [
+            { id: 1, category: "culture", question: "言語・宗教・生活様式などの共通した「文化的指標」により、互いに結ばれているという意識をもつ集団を何というか？", correctAnswer: "民族", wrongAnswers: ["国家", "人種", "家族"], explanation: "共通の言語を話すことは、同じ民族に属しているという連帯感を強めます。" },
+            { id: 2, category: "culture", question: "独自の言語や文化を持ちながら、ほかの民族の国家に編入されてしまっている集団を何というか？", correctAnswer: "少数民族", wrongAnswers: ["多数民族", "移民", "難民"], explanation: "例としてスペインのバスクやカタルーニャが挙げられます。" },
+            { id: 3, category: "culture", question: "スペインとフランスの国境にあるピレネー山脈付近に位置し、独自の言語を持つ少数民族の地域はどこか？", correctAnswer: "バスク地方", wrongAnswers: ["カタルーニャ地方", "ガリシア地方", "アンダルシア地方"], explanation: "ピカソの『ゲルニカ』はこの地を表現したものです。分離・独立を求める運動もあります。" },
+            { id: 4, category: "culture", question: "スペイン北東部に位置し、中心都市バルセロナを持つ自治州はどこか？", correctAnswer: "カタルーニャ地方", wrongAnswers: ["バスク地方", "マドリード自治州", "バレンシア州"], explanation: "スペインGDPの約20%を占める産業の中心地であり、豊かな州です。" },
+            { id: 5, category: "culture", question: "いわゆる「スペイン語」として広く使われている、マドリード周辺の言語を何というか？", correctAnswer: "カスティリャ語", wrongAnswers: ["カタルーニャ語", "バスク語", "ガリシア語"], explanation: "これに対し、バスク語やカタルーニャ語は異なる独自の言語です。" },
+            { id: 6, category: "culture", question: "世界で最も「母語人口（話者人口）」が多い言語は何か？", correctAnswer: "中国語", wrongAnswers: ["スペイン語", "英語", "ヒンディー語"], explanation: "ランキングでは1位中国語、2位スペイン語、3位英語となっています。" },
+            { id: 7, category: "culture", question: "国や州などで、公の場において用いることが定められている言語を何というか？", correctAnswer: "公用語", wrongAnswers: ["共通語", "標準語", "母国語"], explanation: "1国家1公用語の国が多いですが、複数ある国もあります。" },
+            { id: 16, category: "culture", question: "ドイツ語、フランス語、イタリア語、ロマンシュ語の4つを公用語とする国は？", correctAnswer: "スイス", wrongAnswers: ["ベルギー", "オーストリア", "オランダ"], explanation: "地形的に内陸国であり、周辺国の言語が流入しています。" },
+            { id: 17, category: "culture", question: "オランダ語、フランス語、ドイツ語が話され、言語圏による地域区分が明確な国は？", correctAnswer: "ベルギー", wrongAnswers: ["スイス", "デンマーク", "フィンランド"], explanation: "北部がオランダ語、南部がフランス語圏です。" },
+            { id: 18, category: "culture", question: "オーストラリアの先住民族を何というか？", correctAnswer: "アボリジニ", wrongAnswers: ["マオリ", "インディアン", "イヌイット"], explanation: "オーストラリア大陸の先住民です。" },
+            { id: 19, category: "culture", question: "ニュージーランドの先住民族で、伝統舞踊「ハカ」で知られるのは？", correctAnswer: "マオリ", wrongAnswers: ["アボリジニ", "ポリネシアン", "メラネシアン"], explanation: "ラグビーの試合前などに行われる舞踊としても有名です。" },
+            { id: 20, category: "culture", question: "北アメリカ大陸の先住民族を現在一般的に何と呼ぶか？", correctAnswer: "ネイティブアメリカン", wrongAnswers: ["インディアン", "アボリジニ", "マオリ"], explanation: "アメリカ開拓に伴い追いやられた歴史があります。" },
+            { id: 53, category: "culture", question: "旧宗主国の影響で、ブラジルで公用語として使われている言語は何か？", correctAnswer: "ポルトガル語", wrongAnswers: ["スペイン語", "英語", "フランス語"], explanation: "中南米の多くの国はスペイン語ですが、ブラジルはポルトガル語です。" },
+            { id: 8, category: "religion", question: "イスラム教で「不浄なもの」として食べることを禁じられている動物は？", correctAnswer: "豚", wrongAnswers: ["牛", "羊", "鶏"], explanation: "豚肉のほか、飲酒も禁じられています。" },
+            { id: 9, category: "religion", question: "イスラム教において、宗教的に定められた方法で調理された「許された食品」を何というか？", correctAnswer: "ハラールフード", wrongAnswers: ["コーシャフード", "ベジタリアンフード", "精進料理"], explanation: "適切に処理された鶏、羊、魚などは食べられます。" },
+            { id: 10, category: "religion", question: "ヒンドゥー教において「聖なる動物」とされ、食べない動物は？", correctAnswer: "牛", wrongAnswers: ["豚", "羊", "鶏"], explanation: "不殺生の教えから、多くの教徒は菜食主義者（ベジタリアン）です。" },
+            { id: 11, category: "religion", question: "キリスト教、イスラム教、仏教の「世界三大宗教」に含まれない、インド発祥の民族宗教はどれか？", correctAnswer: "ヒンドゥー教", wrongAnswers: ["キリスト教", "イスラム教", "仏教"], explanation: "ヒンドゥー教はインドを中心に信仰される民族宗教です。" },
+            { id: 12, category: "religion", question: "ヒンドゥー教徒などが信じる、多数の神々が存在するという考え方を何というか？", correctAnswer: "多神教", wrongAnswers: ["一神教", "無神論", "アニミズム"], explanation: "特定の教祖を持たないのも特徴です。" },
+            { id: 13, category: "religion", question: "「ユダヤ人だけが神に救われる」という独特の思想を何というか？", correctAnswer: "選民思想", wrongAnswers: ["博愛思想", "輪廻転生", "慈悲の心"], explanation: "神との契約を守る責任を持つと考えられています。" },
+            { id: 14, category: "religion", question: "イスラム教の聖典であり、神（アッラー）の言葉を記したものは何か？", correctAnswer: "コーラン（クルアーン）", wrongAnswers: ["聖書", "ヴェーダ", "お経"], explanation: "アラビア語で記されています。" },
+            { id: 15, category: "religion", question: "日本や中国などの東アジアに伝わり、「広く大衆を救済する」ことに特徴がある仏教の宗派は？", correctAnswer: "大乗仏教", wrongAnswers: ["上座仏教", "チベット仏教", "原始仏教"], explanation: "対して東南アジアでは上座仏教が主流です。" },
+            { id: 21, category: "religion", question: "紀元前5世紀頃、インドでガウタマ＝シッダールタ（ブッダ）が創始した宗教の聖典を何というか？", correctAnswer: "仏典", wrongAnswers: ["聖書", "コーラン", "ヴェーダ"], explanation: "ブッダの教えが記されています。" },
+            { id: 22, category: "religion", question: "仏教のうち、スリランカやミャンマー、タイなどの東南アジアで信仰されている、出家して修行することを重視する宗派は？", correctAnswer: "上座仏教", wrongAnswers: ["大乗仏教", "チベット仏教", "密教"], explanation: "「南伝仏教」とも呼ばれます。" },
+            { id: 23, category: "religion", question: "仏教のうち、中国・朝鮮半島・日本などに伝わった、広く大衆の救済を目指す宗派は？", correctAnswer: "大乗仏教", wrongAnswers: ["上座仏教", "原始仏教", "ヒンドゥー教"], explanation: "「北伝仏教」とも呼ばれます。" },
+            { id: 24, category: "religion", question: "キリスト教の聖典は何か？", correctAnswer: "聖書", wrongAnswers: ["コーラン", "仏典", "タルムード"], explanation: "旧約聖書と新約聖書からなります。" },
+            { id: 25, category: "religion", question: "キリスト教の母体となった、唯一神ヤハウェを信じる宗教は？", correctAnswer: "ユダヤ教", wrongAnswers: ["イスラム教", "ゾロアスター教", "ヒンドゥー教"], explanation: "イスラム教の母体ともなっています。" },
+            { id: 26, category: "religion", question: "イスラム教の唯一神を何と呼ぶか？", correctAnswer: "アッラー", wrongAnswers: ["ヤハウェ", "ゴッド", "ブラフマー"], explanation: "ムハンマドはアッラーの預言者とされています。" },
+            { id: 27, category: "religion", question: "仏教において、苦しみにあふれた現世から、正しい認識と実践（修行）によって到達できる「永遠の死（安らぎ）」の状態を何というか？", correctAnswer: "解脱", wrongAnswers: ["輪廻転生", "成仏", "涅槃"], explanation: "悟りを開くことで到達できるとされています。" },
+            { id: 28, category: "religion", question: "現世の行いによって来世が決定されながら、生死は無限にくりかえされるとする考え方を何というか？", correctAnswer: "輪廻転生", wrongAnswers: ["諸行無常", "盛者必衰", "因果応報"], explanation: "この輪廻から抜け出すことを解脱といいます。" },
+            { id: 29, category: "religion", question: "チベットを中心に信仰されている、大乗仏教と土着の宗教が融合して誕生した仏教は？", correctAnswer: "チベット仏教", wrongAnswers: ["上座仏教", "禅宗", "浄土真宗"], explanation: "モンゴルやブータンにも分布しています。" },
+            { id: 30, category: "religion", question: "チベット仏教の最高指導者の称号は？", correctAnswer: "ダライ・ラマ", wrongAnswers: ["法王", "カリフ", "グル"], explanation: "観音菩薩の化身とされています。" },
+            { id: 54, category: "religion", question: "ヒンドゥー教徒が沐浴などを行う、インドにある聖なる川はどこか？", correctAnswer: "ガンジス川", wrongAnswers: ["インダス川", "ナイル川", "黄河"], explanation: "聖地ワーラーナシー（ベナレス）などが有名です。" },
+            { id: 55, category: "religion", question: "ユダヤ教の預言者であり、神から「十戒」を授かったとされる人物は？", correctAnswer: "モーセ", wrongAnswers: ["イエス", "ムハンマド", "ダビデ"], explanation: "「出エジプト」を指導し、シナイ山で十戒を授かりました。" },
+            { id: 56, category: "religion", question: "ヒンドゥー教のカースト制度（ヴァルナ）において、最上位とされる「司祭」階級を何というか？", correctAnswer: "バラモン", wrongAnswers: ["クシャトリヤ", "ヴァイシャ", "シュードラ"], explanation: "祭儀を司る最高位の階級です。その下に王族・武士、庶民、隷属民と続きます。" },
+            { id: 57, category: "religion", question: "ヒンドゥー教の三大神のうち、世界を「破壊」し再創造するとされる神は？", correctAnswer: "シヴァ", wrongAnswers: ["ヴィシュヌ", "ブラフマー", "インドラ"], explanation: "創造のブラフマー、維持のヴィシュヌ、破壊のシヴァが三大神です。" },
+            { id: 58, category: "religion", question: "仏教の世界観で、地獄・餓鬼・畜生など、生前の行いにより生まれ変わる6つの世界のことを何というか？", correctAnswer: "六道", wrongAnswers: ["三悪道", "極楽浄土", "涅槃"], explanation: "苦しみの激しい世界を三悪道とも言います。" },
+            { id: 60, category: "religion", question: "イスラム教徒の義務の一つで、1日5回メッカの方角に向かって祈ることを何というか？", correctAnswer: "礼拝（サラート）", wrongAnswers: ["断食（サウム）", "巡礼（ハッジ）", "喜捨（ザカート）"], explanation: "モスクなどで集団で行うことも重要視されます。" },
+            { id: 31, category: "china", question: "1949年に中華人民共和国が成立した際の主席は誰か？", correctAnswer: "毛沢東", wrongAnswers: ["鄧小平", "習近平", "江沢民"], explanation: "中国共産党を率いて建国しました。" },
+            { id: 32, category: "china", question: "中華人民共和国において「一党独裁」を行っている政党は？", correctAnswer: "中国共産党", wrongAnswers: ["中国国民党", "民主進歩党", "共和党"], explanation: "事実上、国家よりも上位にある指導政党です。" },
+            { id: 33, category: "china", question: "かつて中国大陸を支配していたが、共産党との内戦に敗れて台湾に逃れた政党は？", correctAnswer: "中国国民党", wrongAnswers: ["中国共産党", "民主党", "自由民主党"], explanation: "台湾（中華民国）の主要政党の一つとなりました。" },
+            { id: 34, category: "china", question: "辛亥革命（1911年）の中心人物であり、中国国民党の創設者とされるのは？", correctAnswer: "孫文", wrongAnswers: ["毛沢東", "袁世凱", "蒋介石"], explanation: "「国父」として中国・台湾双方で尊敬されています。" },
+            { id: 35, category: "china", question: "孫文の後継者として国民党を率い、後に台湾へ逃れた人物は？", correctAnswer: "蒋介石", wrongAnswers: ["毛沢東", "周恩来", "李登輝"], explanation: "戦後、台湾で中華民国政府を維持しました。" },
+            { id: 36, category: "china", question: "1971年のアルバニア決議により、中華人民共和国が代表権を獲得した国際機関は？", correctAnswer: "国際連合", wrongAnswers: ["WHO", "WTO", "NATO"], explanation: "これに伴い、「中華民国（台湾）」は国連を脱退しました。" },
+            { id: 37, category: "china", question: "世界三大料理とされるのは、フランス料理、トルコ料理と、あと一つは？", correctAnswer: "中華料理", wrongAnswers: ["イタリア料理", "日本料理", "インド料理"], explanation: "長い歴史と多様な技法を持つ料理体系です。" },
+            { id: 38, category: "china", question: "中国料理のうち、宮廷料理が発祥で、北京ダックやマントウなどで知られる料理は？", correctAnswer: "北京料理", wrongAnswers: ["上海料理", "広東料理", "四川料理"], explanation: "寒冷な気候のため、油を多用し味が濃いのが特徴です。" },
+            { id: 39, category: "china", question: "長江下流の海産物を使い、上海ガニや小籠包などで知られる料理は？", correctAnswer: "上海料理", wrongAnswers: ["北京料理", "広東料理", "四川料理"], explanation: "醤油や砂糖を使った甘めの煮込み料理なども有名です。" },
+            { id: 40, category: "china", question: "「食は広州にあり」と言われ、素材の味を生かした淡白な味付け（フカヒレ、飲茶など）が特徴の料理は？", correctAnswer: "広東料理", wrongAnswers: ["北京料理", "上海料理", "四川料理"], explanation: "日本で最も馴染みのある中華料理のルーツの一つです。" },
+            { id: 41, category: "china", question: "唐辛子や山椒を使った辛い味付け（麻婆豆腐、エビチリなど）が特徴の料理は？", correctAnswer: "四川料理", wrongAnswers: ["北京料理", "上海料理", "広東料理"], explanation: "内陸の盆地で湿気が多いため、発汗作用のある辛い料理が発達しました。" },
+            { id: 42, category: "china", question: "1970年代以降、「漢江の奇跡」と呼ばれる急速な経済成長を遂げた国は？", correctAnswer: "韓国", wrongAnswers: ["北朝鮮", "ベトナム", "タイ"], explanation: "政府主導の輸出指向型工業化により発展しました。" },
+            { id: 43, category: "china", question: "韓国や台湾、香港、シンガポールなど、1970年代から急速に工業化した地域を総称して何と呼ぶか？", correctAnswer: "アジアNIEs", wrongAnswers: ["ASEAN", "BRICS", "G7"], explanation: "新興工業経済地域のことです。" },
+            { id: 44, category: "china", question: "中国でかつて導入されていた、農業集団化のための組織を何というか？（現在は解体）", correctAnswer: "人民公社", wrongAnswers: ["コルホーズ", "ソフホーズ", "協同組合"], explanation: "平等ではありましたが、生産意欲の低下を招きました。" },
+            { id: 45, category: "china", question: "政府が生産計画を立てる社会主義特有の経済体制を何というか？", correctAnswer: "計画経済", wrongAnswers: ["市場経済", "混合経済", "自由経済"], explanation: "需要と供給に関わらず、国が生産量や価格を決定します。" },
+            { id: 46, category: "china", question: "中国が導入した、市場原理（需要と供給）を取り入れた経済の仕組みを何というか？", correctAnswer: "社会主義市場経済", wrongAnswers: ["計画経済", "統制経済", "封建経済"], explanation: "政治は社会主義（共産党独裁）、経済は資本主義という独特の体制です。" },
+            { id: 47, category: "china", question: "1978年から鄧小平が唱えた、経済の近代化を目指して外国資本や技術を積極的に導入する政策は？", correctAnswer: "改革開放政策", wrongAnswers: ["大躍進政策", "文化大革命", "一人っ子政策"], explanation: "沿海部に経済特区を設けるなどしました。" },
+            { id: 48, category: "china", question: "改革開放政策の一環として農業に導入された、生産目標を超えた分を農家の収入にできる制度は？", correctAnswer: "生産責任制", wrongAnswers: ["人民公社制", "屯田兵制", "小作制度"], explanation: "働いた分だけ収入が増えるため、生産意欲が向上しました。" },
+            { id: 49, category: "china", question: "農村部で発展した、村や町が経営する小規模な企業を何というか？", correctAnswer: "郷鎮企業", wrongAnswers: ["国営企業", "財閥", "ベンチャー企業"], explanation: "農村の余剰労働力の受け皿となりました。" },
+            { id: 50, category: "china", question: "豊富な労働力と安価な生産コストにより、かつて中国は何と呼ばれて成長したか？", correctAnswer: "世界の工場", wrongAnswers: ["世界の市場", "世界の銀行", "世界の倉庫"], explanation: "現在は購買力も上がり「世界の市場」へと変化しつつあります。" },
+            { id: 51, category: "china", question: "外国企業の誘致のために沿海部に設置された、税制優遇などが受けられる地区を何というか？", correctAnswer: "経済特区", wrongAnswers: ["自由貿易協定", "輸出加工区", "工業団地"], explanation: "アモイ、スワトウ、シェンチェン、チューハイ、ハイナン島の5箇所が最初です。" },
+            { id: 52, category: "china", question: "中国の農村部から都市部へ働きに出る人々（出稼ぎ労働者）を何というか？", correctAnswer: "民工（盲流）", wrongAnswers: ["華僑", "難民", "帰化人"], explanation: "都市建設や工場の労働力となっています。" },
+            { id: 59, category: "china", question: "中国の経済特区の一つで、香港に隣接し、小さな漁村から巨大なハイテク都市へと急成長した都市は？", correctAnswer: "深圳（シェンチェン）", wrongAnswers: ["上海（シャンハイ）", "北京（ペキン）", "広州（コワンチョウ）"], explanation: "「中国のシリコンバレー」とも呼ばれます。" }
+        ];
+
+        /* --- LOGIC --- */
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let isAnswered = false;
+        let selectedCategory = null;
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Screens
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const btnHome = document.getElementById('btn-home');
+        
+        function showScreen(screen) {
+            startScreen.classList.add('hidden');
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.add('hidden');
+            screen.classList.remove('hidden');
+            
+            // Header visibility
+            if(screen === startScreen) {
+                btnHome.classList.add('hidden');
+            } else {
+                btnHome.classList.remove('hidden');
+            }
+        }
+
+        function startGame(category) {
+            selectedCategory = category;
+            score = 0;
+            currentIndex = 0;
+            
+            if (category === 'all') {
+                currentQuestions = shuffle([...RAW_DATA]);
+            } else {
+                currentQuestions = shuffle(RAW_DATA.filter(q => q.category === category));
+            }
+
+            if (currentQuestions.length === 0) {
+                alert("問題がありません");
+                return;
+            }
+
+            showScreen(quizScreen);
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            isAnswered = false;
+            const q = currentQuestions[currentIndex];
+            
+            // Reset Overlay
+            const overlay = document.getElementById('explanation-overlay');
+            const overlayBg = document.getElementById('expl-bg');
+            const overlayCard = document.getElementById('expl-card');
+            overlay.classList.add('hidden');
+            overlayBg.style.opacity = '0';
+            overlayCard.style.transform = 'translateY(100%)';
+
+            // Reset Animations for Quiz Screen elements
+            const questionContainer = document.getElementById('question-container');
+            const optionsContainer = document.getElementById('options-container');
+            
+            // Remove animation class
+            questionContainer.classList.remove('animate-enter');
+            optionsContainer.classList.remove('animate-enter');
+            
+            // Trigger reflow
+            void questionContainer.offsetWidth;
+            
+            // Re-add animation class
+            questionContainer.classList.add('animate-enter');
+            optionsContainer.classList.add('animate-enter');
+            
+            // Reset opacity manually to ensure fade-in works
+            questionContainer.style.opacity = '0';
+            optionsContainer.style.opacity = '0';
+            // Slight stagger for options
+            optionsContainer.style.animationDelay = '0.1s';
+
+
+            // Text
+            document.getElementById('q-text').textContent = q.question;
+
+            // Options
+            optionsContainer.innerHTML = '';
+            
+            const allOptions = shuffle([q.correctAnswer, ...q.wrongAnswers]);
+            
+            allOptions.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `
+                    option-btn group relative flex-1 w-full rounded-xl px-5 py-4 flex items-center gap-4
+                    hover:bg-white/10 overflow-hidden
+                `;
+                btn.innerHTML = `
+                    <div class="w-8 h-8 rounded-full bg-white/5 border border-white/5 flex items-center justify-center text-xs font-mono text-white/40 group-hover:text-cyan-400 group-hover:border-cyan-500/30 transition-colors shrink-0 shadow-[0_0_10px_rgba(0,0,0,0.5)]">
+                        ${String.fromCharCode(65 + idx)}
+                    </div>
+                    <span class="text-left font-medium text-white/90 text-sm md:text-base leading-snug tracking-wide shadow-black drop-shadow-md">${opt}</span>
+                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-500/0 via-cyan-500/5 to-cyan-500/0 opacity-0 group-hover:opacity-100 transition-opacity transform -skew-x-12"></div>
+                `;
+                btn.onclick = () => checkAnswer(opt, q.correctAnswer);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        function checkAnswer(selected, correct) {
+            if (isAnswered) return;
+            isAnswered = true;
+            
+            const isCorrect = selected === correct;
+            if (isCorrect) score++;
+
+            // Highlight Options
+            const buttons = document.getElementById('options-container').children;
+            for (let btn of buttons) {
+                btn.disabled = true;
+                const text = btn.querySelector('span').innerText;
+                
+                // Reset basic styles
+                btn.classList.remove('hover:bg-white/10');
+                
+                if (text === correct) {
+                    // Correct Answer Style (Green Neon)
+                    btn.style.background = 'rgba(16, 185, 129, 0.2)';
+                    btn.style.borderColor = 'rgba(16, 185, 129, 0.6)';
+                    btn.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.2), inset 0 0 10px rgba(16, 185, 129, 0.1)';
+                    btn.querySelector('div').style.color = '#10B981';
+                    btn.querySelector('div').style.borderColor = '#10B981';
+                } else if (text === selected && !isCorrect) {
+                    // Wrong Answer Style (Red Neon)
+                    btn.style.background = 'rgba(239, 68, 68, 0.2)';
+                    btn.style.borderColor = 'rgba(239, 68, 68, 0.6)';
+                    btn.style.boxShadow = '0 0 20px rgba(239, 68, 68, 0.2), inset 0 0 10px rgba(239, 68, 68, 0.1)';
+                    btn.querySelector('div').style.color = '#EF4444';
+                    btn.querySelector('div').style.borderColor = '#EF4444';
+                } else {
+                    btn.style.opacity = '0.3';
+                }
+            }
+
+            // Show Overlay (No delay + Swift Slide Effect)
+            const overlay = document.getElementById('explanation-overlay');
+            const overlayBg = document.getElementById('expl-bg');
+            const overlayCard = document.getElementById('expl-card');
+            const statusBar = document.getElementById('expl-status-bar');
+            const iconDiv = document.getElementById('expl-icon');
+            
+            // Set Content
+            document.getElementById('expl-correct-answer').textContent = correct;
+            document.getElementById('expl-text').textContent = currentQuestions[currentIndex].explanation;
+
+            // Style based on result
+            if (isCorrect) {
+                statusBar.className = "flex items-center gap-3 mb-2 p-4 rounded-xl bg-green-500/10 border border-green-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]";
+                iconDiv.className = "w-10 h-10 rounded-full bg-green-500 text-black flex items-center justify-center shrink-0 font-bold shadow-[0_0_15px_rgba(34,197,94,0.4)]";
+                iconDiv.innerHTML = '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>';
+            } else {
+                statusBar.className = "flex items-center gap-3 mb-2 p-4 rounded-xl bg-red-500/10 border border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]";
+                iconDiv.className = "w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center shrink-0 font-bold shadow-[0_0_15px_rgba(239,68,68,0.4)]";
+                iconDiv.innerHTML = '<svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>';
+            }
+
+            // Animate In Immediately
+            overlay.classList.remove('hidden');
+            // Force reflow for transition
+            void overlay.offsetWidth; 
+            
+            overlayBg.style.opacity = '1';
+            overlayCard.style.transform = 'translateY(0)';
+        }
+
+        function nextQuestion() {
+            if (currentIndex + 1 >= currentQuestions.length) {
+                showResult();
+            } else {
+                currentIndex++;
+                
+                // オーバーレイを即座に隠す（アニメーション待機なし）
+                const overlay = document.getElementById('explanation-overlay');
+                overlay.classList.add('hidden');
+                
+                // 次の問題を読み込む
+                loadQuestion();
+            }
+        }
+
+        function showResult() {
+            // Animate Overlay Out if open
+            const overlay = document.getElementById('explanation-overlay');
+            if(!overlay.classList.contains('hidden')) {
+                overlay.classList.add('hidden');
+            }
+
+            showScreen(resultScreen);
+            
+            const percent = Math.round((score / currentQuestions.length) * 100);
+            
+            // Count up animation
+            const scoreEl = document.getElementById('res-score');
+            let current = 0;
+            const timer = setInterval(() => {
+                current += 1;
+                scoreEl.textContent = current;
+                if(current >= percent) clearInterval(timer);
+            }, 10);
+
+            // Rank logic
+            const rankEl = document.getElementById('res-rank');
+            let rank = "C", colorClass = "text-gray-400 border-gray-500/30";
+            
+            if (percent === 100) { 
+                rank = "PERFECT"; colorClass = "text-yellow-400 border-yellow-500/50 shadow-[0_0_20px_rgba(250,204,21,0.3)]"; 
+            } else if (percent >= 80) { 
+                rank = "EXCELLENT"; colorClass = "text-cyan-400 border-cyan-500/50 shadow-[0_0_20px_rgba(34,211,238,0.3)]"; 
+            } else if (percent >= 60) { 
+                rank = "GOOD"; colorClass = "text-green-400 border-green-500/50"; 
+            }
+
+            rankEl.textContent = rank;
+            rankEl.className = `inline-block px-6 py-2 rounded-full border bg-white/5 text-lg font-bold tracking-widest ${colorClass}`;
+        }
+
+        function retry() {
+            startGame(selectedCategory);
+        }
+
+        function goHome() {
+            showScreen(startScreen);
+        }
+    </script>
+</body>
+</html>
